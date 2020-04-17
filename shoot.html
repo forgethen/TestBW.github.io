@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Баварские окна</title>
+    <meta name="robots" content="index, follow">
+    <meta name="keywords" content="Баварские окна">
+    <meta name="description" content="Баварские окна">
+    <meta property="og:title" content="Баварские окна">
+    <meta property="og:description" content="Баварские окна">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="site:">
+    <meta property="og:image" content="src/img/static/og.jpg">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i,900,900i&amp;display=swap&amp;subset=cyrillic,cyrillic-ext,greek,greek-ext,latin-ext,vietnamese">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto+Condensed:300,300i,400,400i,700,700i&amp;display=swap&amp;subset=cyrillic,cyrillic-ext,greek,greek-ext,latin-ext,vietnamese">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i&amp;display=swap&amp;subset=cyrillic,cyrillic-ext,greek,greek-ext,latin-ext,vietnamese">
+    <link rel="stylesheet" type="text/css" href="src/fonts/icofont/icofont.min.css">
+    <link rel="stylesheet" type="text/css" href="src/css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="src/css/slick.css">
+    <link rel="stylesheet" type="text/css" href="src/css/jquery.fancybox.min.css">
+    <link rel="stylesheet" type="text/css" href="src/css/inputmask.css">
+    <link rel="stylesheet" type="text/css" href="src/css/datepicker.min.css">
+    <link rel="stylesheet" type="text/css" href="src/css/styles.css">
+    <link rel="icon" type="image/png" href="src/img/static/ico.ico">
+    <script src="src/js/jquery.min.js"></script>
+    <script src="src/js/slick.min.js"></script>
+    <script src="src/js/jquery.inputmask.bundle.js"></script>
+    <script src="src/js/datepicker.min.js"></script>
+    <script src="src/js/jquery.fancybox.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+    <script src="src/js/main.js"></script>
+  </head>
+  <body class="hide-bg">
+    <div class="sitemap"><a href="./index.html">index</a><a href="./product.html">product</a><a href="./service.html">service</a><a href="./service_price.html">service_price</a><a href="./about_company.html">about_company</a><a href="./contacts.html">contacts</a><a href="./posts.html">posts</a><a href="./post_page.html">post_page</a><a href="./shoot.html">shoot</a></div>
+    <div class="preloader"></div>
+    <div class="show_on_mobile">
+      <label class="search">
+        <input type="search" placeholder="Искать"><i class="icofont-search-2"></i>
+      </label>
+    </div>
+    <div class="shooter" id="shooter">
+      <h1 class="page_title absolute">100 ПРИЧИН ЗАКАЗАТЬ У НАС:</h1>
+      <div class="subtitle">Охота на скидку {{shoots.length + 1}} из {{fixtures.length}}</div>
+      <div class="circle" :style="{width: `${circle_width}px`, height: `${circle_width}px`}"></div>
+      <div class="circle2" :style="{width: `${circle_width * 0.6}px`, height: `${circle_width * 0.6}px`}"></div>
+      <div class="circle3" :style="{width: `${circle_width * 0.2}px`, height: `${circle_width * 0.2}px`}"></div>
+      <div class="shoot-area" id="area">
+        <div class="preloader1">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg">
+            <circle class="stroke-1" id="stroke" cx="60" cy="60" r="50"></circle>
+          </svg>
+        </div>
+        <div class="text" id="text" v-if="show_link" :style="{left: `${this.shoots[this.shoots.length-1].x}px`, top: `${this.shoots[this.shoots.length-1].y - 130}px`}">
+          <div class="cross" @click="forceStart"><img src="/src/img/static/cross.png"></div>
+          <div class="title">{{fixtures[shoots.length-1].title}}</div>
+          <div class="desc">{{fixtures[shoots.length-1].desc}}</div>
+          <div class="link"><a href="/">Вызвать замерщика</a></div>
+        </div>
+        <div class="aim" v-bind:style="{ left: `${this.coord_x}px`, top: `${this.coord_y}px` }" v-bind:class="{'delay': delay}"></div>
+        <div class="shoot" @click="shoot" v-bind:class="{'reload': delay}"><span>{{delay? 'Перезарядка' : 'Выстрел'}}</span></div>
+      </div>
+      <div class="bullets-wrap" id="bullets"></div>
+    </div>
+    <script>
+      new Vue({
+        el: '#shooter',
+        data() {
+          let item = {
+            array_width: 0,
+            array_height: 0,
+            coord_x: 0,
+            coord_y: 0,
+            delta_x: 0,
+            delta_y: 0,
+            min: 100,
+            max: 200,
+            frames_per_second: 80,
+            shoots: [],
+            shoot_count: 100,
+            time_delay: 10000, //ms
+            delay: false,
+            fixtures: [],
+            show_link: false,
+            interval: '',
+            circle_width: 0,
+            animate_interval: '',
+            center: {
+              x: 0,
+              y: 0
+            }
+          }
+          let clone = Object.assign({}, item);
+          return {
+            ...item,
+            clone: {
+              ...clone
+            }
+          }
+        },
+        mounted() {
+          console.log('vue did mounted')
+          window.addEventListener('resize', this.initialize)
+          this.initialize()
+        },
+        methods: {
+          getRand(positive) {
+            if (positive) return (this.min - 0.5 + Math.random() * (this.max - this.min + 1)) / this.min
+            else return (-this.min - 0.5 + Math.random() * (-this.max + this.min + 1)) / this.min
+          },
+          forceStart() {
+            clearInterval(this.interval)
+            this.interval = ''
+            this.delay = false
+            this.show_link = false
+            stroke.classList.remove('mount')
+          },
+          initialize() {
+            console.log('initialize')
+            if (this.animate_interval) clearInterval(this.animate_interval)
+            Object.keys(this.clone).map(x => {
+              this[x] = this.clone[x]
+            })
+            setTimeout(() => {
+              for(let i = 0;i<this.shoot_count; i++) {
+                this.fixtures.push({
+                  'title': `Причина ${i+1}`,
+                  'desc': `${this.getRand()}`,
+                  'link': 'http://google.com'
+                })
+              }
+              this.generateBullets()
+              this.array_width = area.offsetWidth
+              this.array_height = area.offsetHeight
+              this.circle_width = area.offsetWidth / 3
+              this.center.x = area.offsetWidth / 2
+              this.center.y = area.offsetHeight / 2
+              //- return false
+              this.delta_x = this.getRand(true)
+              this.delta_y = this.getRand(true)
+              this.animate_interval = setInterval(() => this.animate(), 1000/this.frames_per_second)
+            }, 1000)
+          },
+          animate() {
+            if (this.delay) return false
+            if (this.coord_x >= this.array_width - 400 && this.delta_x > 0) this.delta_x = this.getRand(false)
+            if (this.coord_y >= this.array_height - 200 && this.delta_y > 0) this.delta_y = this.getRand(false)
+            if (this.coord_x < 200 && this.delta_x < 0) this.delta_x = this.getRand(true)
+            if (this.coord_y < 200 && this.delta_y < 0) this.delta_y = this.getRand(true)
+            this.coord_x += this.delta_x
+            this.coord_y += this.delta_y
+          },
+          shoot() {
+            console.log(this.center, this.coord_x, this.coord_y)
+            let checkmate = Math.abs(Math.sqrt((this.coord_x - this.center.x + 70)**2 + (this.coord_y - this.center.y)**2))
+            if (checkmate > this.circle_width / 2) return false
+            if (this.shoots.length >= this.shoot_count) return false
+            if (this.delay) return false
+            this.shoots.push({
+              x: this.coord_x,
+              y: this.coord_y
+            })
+            let element = document.createElement('div')
+            element.classList.add('shot')
+            element.style.left = `${this.coord_x + 50}px`
+            element.style.top = `${this.coord_y + 50}px`
+            area.appendChild(element)
+            this.generateBullets()
+            this.delay = true
+            this.show_link = true
+            stroke.classList.add('mount')
+            this.interval = setTimeout(()=> {
+              this.delay = false
+              this.show_link = false
+              stroke.classList.remove('mount')
+            }, this.time_delay)
+          },
+          generateBullets() {
+            bullets.innerHTML = ''
+            let bulletsElms = document.createElement('div')
+            bulletsElms.id = 'bulletsid'
+            bulletsElms.classList.add('generate-wrapper')
+            bulletsElms.style.width = `${this.shoot_count * 50}px`
+            let complete = this.shoots.length
+            if (complete > 3) {
+              bulletsElms.style.marginLeft = `-${(complete - 3)*50}px`
+            }
+            for (var i=0; i < complete; i++) {
+              let bullet = document.createElement('div')
+              bullet.classList.add('complete')
+              if (i==0) bullet.id = `fixbullet`
+              bulletsElms.appendChild(bullet)
+            }
+            if (complete >= this.shoot_count) bullets.appendChild(bulletsElms)
+            else {
+              let bullet = document.createElement('div')
+              bullet.classList.add('start')
+              bulletsElms.appendChild(bullet)
+            }
+            if (complete + 1 >= this.shoot_count) bullets.appendChild(bulletsElms)
+            else {
+              for (var i = 0; i<this.shoot_count - complete - 1; i++) {
+                let bullet = document.createElement('div')
+                bullet.classList.add('ready')
+                bulletsElms.appendChild(bullet)
+              }
+              bullets.appendChild(bulletsElms)
+              setTimeout(() => {
+                if (complete > 3) bulletsid.classList.add('move')
+              }, 100)
+            }
+          }
+        }
+      })
+      
+      
+    </script>
+    <div class="services_nav">
+      <ul>
+        <li class="services_nav__item active">
+          <div class="services_nav__preview_img"><img src="src/img/demo/s4.jpg"></div><a class="services_nav__link" href="#">Пластиковые окна</a>
+        </li>
+        <li class="services_nav__item">
+          <div class="services_nav__preview_img"><img src="src/img/demo/s1.jpeg"></div><a class="services_nav__link" href="#">Остекление балконов</a>
+        </li>
+        <li class="services_nav__item">
+          <div class="services_nav__preview_img"><img src="src/img/demo/s2.jpg"></div><a class="services_nav__link" href="#">Жалюзи</a>
+        </li>
+        <li class="services_nav__item">
+          <div class="services_nav__preview_img"><img src="src/img/demo/s3.jpg"></div><a class="services_nav__link" href="#">Натяжные потолки</a>
+        </li>
+      </ul>
+    </div>
+    <div class="requestMaster"><img src="src/img/static/master.svg" alt="master">
+      <div class="wrapper">
+        <form>
+          <div class="top">
+            <input type="text" placeholder="ВАШЕ ИМЯ">
+            <input type="phone" placeholder="НОМЕР ТЕЛЕФОНА">
+            <input class="submit" type="submit" value="ПРИГЛАСИТЬ МАСТЕРА">
+          </div>
+          <div class="bottom">
+            <label class="checkbox">
+              <input type="checkbox" checked>
+              <div class="checker"></div><span>Согласие – по праву считается<br>одной из самых элитных профильных систем! </span>
+            </label>
+          </div>
+        </form>
+      </div>
+    </div>
+    <footer class="footer"><img src="src/img/static/white-logo.svg" alt="white-logo">
+      <div class="footer__menu">
+        <div class="footer__item">
+          <p class="footer__title">Адрес</p>
+          <p>г. Саранск, <br>ул. Коммунистическая, д. 17</p>
+        </div>
+        <div class="footer__item">
+          <p class="footer__title">Телефон</p>
+          <div class="numbers"><a href="tel:+78342233033">+7 (8342) 23-30-33;</a><a href="tel:+783422310933">+7 (8342) 31-09-33;</a><a href="tel:+783422340024">+7 (8342) 34-00-24;</a></div>
+        </div>
+        <div class="footer__item">
+          <p class="footer__title">ЭЛ. ПОЧТА</p><a href="mailto:bavokna@mail.ru">bavokna@mail.ru</a><a class="btn btn--blue btn--small" data-fancybox="" data-src="#measure" href="javascript:;">Пригласить замерщика</a>
+        </div>
+      </div>
+      <div class="footer__social"><a class="icofont-vk" href="#"></a><a class="icofont-instagram" href="#"></a><a class="icofont-map-pins" href="#"></a></div>
+      <div class="copyright">
+        <p>2010-2019 © Copyright www.saransk-okna.ru<br/>Все права защищены.</p>
+      </div>
+    </footer>
+    <section class="modals">
+      <div class="modals__item request" id="request">
+        <p class="modals__title">ЗАЯВКА</p>
+        <form name="request" action="request">
+          <label>
+            <input type="text" placeholder="Имя" required>
+          </label>
+          <label>
+            <input type="phone" placeholder="+7" required>
+          </label>
+          <label>
+            <textarea placeholder="Вопрос / Комментарий"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" checked>
+            <div class="checker"></div><span>Согласие – по праву считается<br>одной из самых элитных профильных систем! </span>
+          </label>
+          <input type="submit" value="ОТПРАВИТЬ">
+        </form>
+      </div>
+      <div class="modals__item review" id="review">
+        <p class="modals__title">ОСТАВИТЬ ОТЗЫВ</p>
+        <form name="question" action="question">
+          <label>
+            <input type="text" placeholder="Имя" required>
+          </label>
+          <label>
+            <input type="phone" placeholder="+7" required>
+          </label>
+          <label>
+            <textarea placeholder="Ваш вопрос"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" checked>
+            <div class="checker"></div><span>Согласие – по праву считается<br>одной из самых элитных профильных систем! </span>
+          </label>
+          <input type="submit" value="ОТПРАВИТЬ">
+        </form>
+      </div>
+      <div class="modals__item question" id="question">
+        <p class="modals__title">ЗАДАТЬ ВОПРОС</p>
+        <form name="question" action="question">
+          <label>
+            <input type="text" placeholder="Имя" required>
+          </label>
+          <label>
+            <input type="phone" placeholder="+7" required>
+          </label>
+          <label>
+            <textarea placeholder="Ваш вопрос"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" checked>
+            <div class="checker"></div><span>Согласие – по праву считается<br>одной из самых элитных профильных систем! </span>
+          </label>
+          <input type="submit" value="ОТПРАВИТЬ">
+        </form>
+      </div>
+      <div class="modals__item cause" id="cause">
+        <p class="modals__title">ВЫЗВАТЬ МАСТЕРА</p>
+        <form name="cause" action="cause">
+          <label>
+            <input type="text" placeholder="Имя" required>
+          </label>
+          <label>
+            <input type="phone" placeholder="+7" required>
+          </label>
+          <label class="date">
+            <input type="text" placeholder="Дата"><i class="icofont-ui-calendar"></i>
+          </label>
+          <label class="time">
+            <input type="text" placeholder="Время"><i class="icofont-ui-clock"></i>
+          </label>
+          <label>
+            <textarea placeholder="Адрес"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" checked>
+            <div class="checker"></div><span>Согласие – по праву считается<br>одной из самых элитных профильных систем! </span>
+          </label>
+          <input type="submit" value="ОТПРАВИТЬ">
+        </form>
+      </div>
+      <div class="modals__item measure" id="measure">
+        <p class="modals__title">ВЫЗВАТЬ ЗАМЕРЩИКА</p>
+        <form name="measure" action="measure">
+          <label>
+            <input type="text" placeholder="Имя" required>
+          </label>
+          <label>
+            <input type="phone" placeholder="+7" required>
+          </label>
+          <label class="date">
+            <input type="text" placeholder="Дата"><i class="icofont-ui-calendar"></i>
+          </label>
+          <label class="time">
+            <input type="text" placeholder="Время"><i class="icofont-ui-clock"></i>
+          </label>
+          <label>
+            <textarea placeholder="Адрес"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" checked>
+            <div class="checker"></div><span>Согласие – по праву считается<br>одной из самых элитных профильных систем! </span>
+          </label>
+          <input type="submit" value="ОТПРАВИТЬ">
+        </form>
+      </div>
+    </section>
+  </body>
+</html>

@@ -138,6 +138,33 @@ $(document).ready(function() {
     }, ]
   });
 
+  $('.gallerySlider').slick({
+    autoplay: false,
+    infinite: true,
+    slidesToShow: 3,
+    speed: 250,
+    autoplayspeed: 2500,
+    adaptiveWidth: true,
+    cssEase: 'ease-in-out',
+    dots:false,
+    arrows: false,
+    draggable: true,
+    responsive: [{
+      breakpoint: 1025,
+      settings: {
+        autoplay: true,
+        slidesToShow: 1,
+        autoplay: false,
+        arrows: true,
+        prevArrow: '<div class="slick-prev"><i class="icofont-rounded-left"></i></div>',
+        nextArrow: '<div class="slick-next"><i class="icofont-rounded-right"></i></div>',
+        dots: true,
+        speed: 250,
+        autoplayspeed: 2500,
+      }
+    }, ]
+  });
+
   $('.convenience').slick({
     infinite: true,
     centerMode: true,
@@ -237,6 +264,55 @@ $(document).ready(function() {
   // });
   //
   // animate();
+
+  // var companyHistory = $('.companyHistory');
+  //
+  // companyHistory.each(function () {
+      // var slidesRow       = $(this).find('.slides'),
+        var slideControls   = $('.companyHistorySlider').find('.slide-controls');
+  //
+  //     if (slidesRow.is('.slides-container')) {
+           $('.companyHistorySlider .slides').slick({
+            slide: 'div',
+            autoplay: true,
+            infinite: true,
+            slidesToShow: 6,
+            slidesToScroll: 6,
+            speed: 250,
+            autoplayspeed: 2500,
+            appendArrows: slideControls,
+            prevArrow: slideControls.find('.slide-arrow.arrow-prev'),
+            nextArrow: slideControls.find('.slide-arrow.arrow-next'),
+            appendDots: slideControls,
+            dots: true,
+            dotsClass: 'custom-dots', //slick generates this <ul.custom-dots> within the appendDots container
+            // customPaging: function (slider, i) {
+            //     //FYI just have a look at the object to find aviable information
+            //     //press f12 to access the console
+            //     //you could also debug or look in the source
+            //     console.log(slider);
+            //     var slideNumber = (i + 1),
+            //         totalSlides = slider.slideCount;
+            //     return '<a class="dot" role="button" title="' + slideNumber + ' of ' + totalSlides + '"><span class="string">' + slideNumber + '/' + totalSlides + '</span></a>';
+            // }
+            responsive: [{
+              breakpoint: 1025,
+              settings: {
+                slidesToShow: 3,
+                slidesToScroll: 3,
+              }
+            }, {
+              breakpoint: 600,
+              settings: {
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                dots: false,
+              }
+            },]
+          });
+  //     }
+  // });
+
 
 });
 
